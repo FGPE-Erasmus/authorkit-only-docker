@@ -1,0 +1,56 @@
+version: '3'
+services:
+  authorkit-api:
+    image: fgpe/authorkit-api:local-git
+    env_file: ./env/authorkit/.env
+    restart: unless-stopped
+    depends_on:
+      - authorkit-postgres
+      - authorkit-redis
+    ports:
+      - 8082:3000
+    volumes:
+      - ./volumes/authorkit/local-git:/local-git
+    networks:
+      - fgpe-authorkit-nw
+
+  authorkit-postgres:
+    image: postgres:11-alpine
+    env_file: ./env/authorkit/.postgres.env
+    restart: unless-stopped
+    volumes:
+      - ./volumes/authorkit/postgres:/var/lib/postgresql/data
+    networks:
+      - fgpe-authorkit-nw
+
+  authorkit-redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - ./volumes/authorkit/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./volumes/authorkit/redis/data:/data
+    networks:
+      - fgpe-authorkit-nw
+
+  authorkit-ui:
+    image: fgpe/authorkit-ui:latest
+    restart: unless-stopped
+    volumes:
+      - ./volumes/authorkit/ui/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 8083:80
+    networks:
+      - fgpe-authorkit-nw
+
+  mailhog:
+    image: mailhog/mailhog
+    logging:
+      driver: 'none'  # disable saving logs
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      - fgpe-authorkit-nw
+
+networks:
+  fgpe-authorkit-nw:
